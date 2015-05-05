@@ -15,7 +15,7 @@ void printUsage(char const argv[])
 	exit(0);
 }
 
-void process_options(int argc, char const *argv[], struct config server)
+struct config process_options(int argc, char const *argv[], struct config server)
 {
 	if (argc == 2)
 	{
@@ -34,13 +34,16 @@ void process_options(int argc, char const *argv[], struct config server)
 	}
 	else
 		printUsage(argv[0]);
+
+	return server;
 }
 
 int main(int argc, char const *argv[])
 {
 	struct config server;
-	process_options(argc, argv, server);
+	server = process_options(argc, argv, server);
 
+	
 
 	return 0;
 }
