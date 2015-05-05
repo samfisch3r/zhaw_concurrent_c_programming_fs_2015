@@ -1,6 +1,8 @@
 #include "stdio.h"
 #include "stdlib.h"
 
+#define CHECK 5
+
 struct config
 {
 	int size;
@@ -43,7 +45,7 @@ int main(int argc, char const *argv[])
 	struct config server;
 	server = process_options(argc, argv, server);
 
-	
+
 
 	return 0;
 }
