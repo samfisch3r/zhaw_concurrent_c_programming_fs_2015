@@ -1,15 +1,15 @@
 CC  = gcc
+CFLAGS = -Wall -Wpedantic -Wextra
 APP = client
 SERV = server
 
-all: app serv
+all: client server
 
 clean:
 	rm -f $(APP) $(SERV)
 
-app:
-	$(CC) $(APP).c -Wall -Wpedantic -Wextra -o $(APP)
+client:
+	$(CC) $(APP).c $(CFLAGS) -o $(APP)
 
-serv:
-	$(CC) $(SERV).c -pthread -Wall -Wpedantic -Wextra -o $(SERV)
-
+server:
+	$(CC) $(SERV).c $(CFLAGS) -pthread -o $(SERV)

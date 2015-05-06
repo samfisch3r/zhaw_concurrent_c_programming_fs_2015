@@ -1,10 +1,15 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <errno.h>
 #include <string.h>
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
 #include <signal.h>
+#include <sys/wait.h>
+#include <arpa/inet.h>
 
 #define CHECK 5
 
@@ -27,20 +32,22 @@ struct addrinfo init_hints(int sock_type, int flags)
 	struct addrinfo hints;
 
 	memset(&hints, 0, sizeof(hints));
-	hints.ai_family   =  AF_UNSPEC;
-	hints.ai_socktype =  sock_type;
+	hints.ai_family = AF_UNSPEC;
+	hints.ai_socktype = sock_type;
 	if (flags)
 		hints.ai_flags = flags;
 	return hints;
 }
 
-void *get_in_addr(struct sockaddr *sa) {
+void *get_in_addr(struct sockaddr *sa)
+{
 	return sa->sa_family == AF_INET
 		? (void *) &(((struct sockaddr_in*)sa)->sin_addr)
 		: (void *) &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
-struct addrinfo *resolve_dns(struct addrinfo *hints, const char* host, const char *port) {
+struct addrinfo *resolve_dns(struct addrinfo *hints, const char* host, const char *port)
+{
 	struct addrinfo *servinfo;
 
 	int err = getaddrinfo(host, port, hints, &servinfo);
@@ -52,7 +59,8 @@ struct addrinfo *resolve_dns(struct addrinfo *hints, const char* host, const cha
 	return servinfo;
 }
 
-static void allow_port_reuse (int sockfd) {
+static void allow_port_reuse (int sockfd)
+{
 	int yes = 1;
 
 	int err = setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));
@@ -63,14 +71,16 @@ static void allow_port_reuse (int sockfd) {
 	}
 }
 
-sock_t bind_socket_to_address(struct addrinfo* servinfo) {
+sock_t bind_socket_to_address(struct addrinfo* servinfo)
+{
 	struct addrinfo *p;
 	int sockfd;
 
 	for (p = servinfo; p != NULL; p = p->ai_next)
 	{
 		sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
-		if (sockfd == -1) {
+		if (sockfd == -1)
+		{
 			perror("server: socket");
 			continue;
 		}
