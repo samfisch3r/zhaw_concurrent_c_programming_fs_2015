@@ -105,9 +105,10 @@ int main(int argc, char const *argv[])
 {
 	const char *port = process_options(argc, argv);
 
-	const char *host = argc == 2 ? argv[1] : "localhost";
+	const char *host = "127.0.0.1";
 
 	struct addrinfo hints = init_hints(SOCK_STREAM, 0);
+
 	struct addrinfo *servinfo = resolve_dns(&hints, host, port);
 	sock_t sock = connect_socket_to_address(servinfo);
 
