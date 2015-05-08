@@ -11,6 +11,12 @@
 
 #define MAXDATA 256
 
+struct config
+{
+	const char *name;
+	const char *port;
+};
+
 struct sock_s
 {
 	int fd;
@@ -79,37 +85,45 @@ static sock_t connect_socket_to_address(struct addrinfo *servinfo)
 
 void printUsage(char const argv[])
 {
-	printf("Usage: %s [port]\n", argv);
+	printf("Usage: %s <name> [port]\n", argv);
+	printf("- Name is a mandatory parameter\n");
 	printf("- Port is an optional parameter, default is: 1234\n");
 	exit(0);
 }
 
-const char* process_options(int argc, char const *argv[])
+struct config process_options(int argc, char const *argv[], struct config client)
 {
-	const char *port;
-	if (argc == 1)
-		port = "1234";
-	else if (argc == 2)
+	if (argc == 2)
 	{
-		port = argv[1];
-		if (!(atoi(port)))
+		client.name = argv[1];
+		if (strcmp(client.name, ""))
+			client.port = "1234";
+		else
+			printUsage(argv[0]);
+	}
+	else if (argc == 3)
+	{
+		client.name = argv[1];
+		client.port = argv[2];
+		if (!(atoi(client.port) && strcmp(client.name, "")))
 			printUsage(argv[0]);
 	}
 	else
 		printUsage(argv[0]);
 
-	return port;
+	return client;
 }
 
 int main(int argc, char const *argv[])
 {
-	const char *port = process_options(argc, argv);
+	struct config client;
+	client = process_options(argc, argv, client);
 
 	const char *host = "127.0.0.1";
 
 	struct addrinfo hints = init_hints(SOCK_STREAM, 0);
 
-	struct addrinfo *servinfo = resolve_dns(&hints, host, port);
+	struct addrinfo *servinfo = resolve_dns(&hints, host, client.port);
 	sock_t sock = connect_socket_to_address(servinfo);
 
 	if (sock.addr == NULL)
