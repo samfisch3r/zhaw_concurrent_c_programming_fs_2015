@@ -126,6 +126,10 @@ int main(int argc, char const *argv[])
 
 	freeaddrinfo(servinfo);
 
+	int sent = send(sock.fd, "HELLO\n", 7, 0);
+	if (sent < 0)
+		perror("send");
+
 	char buf[MAXDATA];
 	int nbytes = recv(sock.fd, buf, MAXDATA - 1, 0);
 	if (nbytes < 0)
@@ -135,7 +139,7 @@ int main(int argc, char const *argv[])
 	}
 	buf[nbytes] = '\0';
 
-	printf("client: received '%s'\n", buf);
+	printf("client: received %s", buf);
 
 	close(sock.fd);
 

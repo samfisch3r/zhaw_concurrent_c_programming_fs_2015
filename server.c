@@ -12,6 +12,7 @@
 #include <arpa/inet.h>
 
 #define CHECK 5
+#define MAXDATA 256
 
 struct config
 {
@@ -129,7 +130,7 @@ static void listen_on(int sockfd, int backlog)
 	}
 }
 
-static void accept_clients(int sockfd)
+static void accept_clients(int sockfd, int size)
 {
 	struct sockaddr_storage client_addr;
 	socklen_t sin_size;
@@ -157,8 +158,28 @@ static void accept_clients(int sockfd)
 		if (is_child_process)
 		{
 			close(sockfd);
-			int sent = send(client_sock_fd, "Hello, world!", 14, 0);
-			if (sent < 0) 
+
+
+			char buf[MAXDATA];
+			int nbytes = recv(client_sock_fd, buf, MAXDATA - 1, 0);
+			if (nbytes < 0)
+			{
+				perror("recv");
+				exit(1);
+			}
+			buf[nbytes] = '\0';
+
+			printf("server: received %s", buf);
+
+			char number[32];
+			sprintf(number, "%d", size);
+
+			char size_string[64] = "SIZE ";
+			strcat(size_string, number);
+			strcat(size_string, "\n");
+
+			int sent = send(client_sock_fd, size_string, sizeof(size_string), 0);
+			if (sent < 0)
 				perror("send");
 
 			close(client_sock_fd);
@@ -224,7 +245,7 @@ int main(int argc, char const *argv[])
 
 	printf("server: waiting for connections on port %s ...\n", server.port);
 
-	accept_clients(sock.fd);
+	accept_clients(sock.fd, server.size);
 
 	return 0;
 }
