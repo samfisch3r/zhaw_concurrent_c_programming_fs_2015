@@ -14,11 +14,16 @@
 #define CHECK 5
 #define MAXDATA 256
 
-struct config
+typedef struct
 {
 	int size;
 	const char *port;
-};
+} config;
+
+typedef struct
+{
+	int free;
+} field;
 
 struct sock_s
 {
@@ -197,7 +202,7 @@ void printUsage(char const argv[])
 	exit(0);
 }
 
-struct config process_options(int argc, char const *argv[], struct config server)
+config process_options(int argc, char const *argv[], config server)
 {
 	if (argc == 2)
 	{
@@ -220,9 +225,19 @@ struct config process_options(int argc, char const *argv[], struct config server
 	return server;
 }
 
+field **playground;
+
+void create_field(int size)
+{
+	int i;
+	playground = (field **) malloc(sizeof(field *) * size);
+	for (i = 0; i < size; ++i)
+		playground[i] = (field *) malloc(sizeof(field) * size);
+}
+
 int main(int argc, char const *argv[])
 {
-	struct config server;
+	config server;
 	server = process_options(argc, argv, server);
 
 	struct addrinfo hints = init_hints(SOCK_STREAM, AI_PASSIVE);
@@ -238,6 +253,8 @@ int main(int argc, char const *argv[])
 	}
 
 	freeaddrinfo(servinfo);
+
+	create_field(server.size);
 
 	listen_on(sock.fd, 10);
 

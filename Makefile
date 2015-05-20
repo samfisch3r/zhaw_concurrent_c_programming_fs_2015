@@ -1,5 +1,5 @@
 CC  = gcc
-CFLAGS = -Wall -Wpedantic -Wextra
+#CFLAGS = -Wall -Wpedantic -Wextra
 APP = client
 SERV = server
 

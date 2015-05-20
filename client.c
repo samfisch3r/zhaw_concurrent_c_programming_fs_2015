@@ -11,11 +11,11 @@
 
 #define MAXDATA 256
 
-struct config
+typedef struct
 {
 	const char *name;
 	const char *port;
-};
+} config;
 
 struct sock_s
 {
@@ -91,7 +91,7 @@ void printUsage(char const argv[])
 	exit(0);
 }
 
-struct config process_options(int argc, char const *argv[], struct config client)
+config process_options(int argc, char const *argv[], config client)
 {
 	if (argc == 2)
 	{
@@ -116,7 +116,7 @@ struct config process_options(int argc, char const *argv[], struct config client
 
 int main(int argc, char const *argv[])
 {
-	struct config client;
+	config client;
 	client = process_options(argc, argv, client);
 
 	const char *host = "127.0.0.1";
