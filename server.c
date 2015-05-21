@@ -10,6 +10,7 @@
 #include <signal.h>
 #include <sys/wait.h>
 #include <arpa/inet.h>
+#include <sys/mman.h>
 
 #define CHECK 5
 #define MAXDATA 256
@@ -23,6 +24,7 @@ typedef struct
 typedef struct
 {
 	int free;
+	char *name;
 } field;
 
 struct sock_s
@@ -32,6 +34,9 @@ struct sock_s
 };
 
 typedef struct sock_s sock_t;
+
+field **playground;
+int *playercount;
 
 struct addrinfo init_hints(int sock_type, int flags)
 {
@@ -164,33 +169,49 @@ static void accept_clients(int sockfd, int size)
 		{
 			close(sockfd);
 
-
 			char buf[MAXDATA];
-			int nbytes = recv(client_sock_fd, buf, MAXDATA - 1, 0);
-			if (nbytes < 0)
+			int nbytes;
+
+			while(*playercount < size/2)
 			{
-				perror("recv");
-				exit(1);
+				nbytes = recv(client_sock_fd, buf, MAXDATA - 1, 0);
+				if (nbytes < 0)
+				{
+					perror("recv");
+					exit(1);
+				}
+				if (nbytes == 0)
+				{
+					close(client_sock_fd);
+					*playercount -= 1;
+					exit(0);
+				}
+
+				buf[nbytes] = '\0';
+				printf("server: received %s", buf);
+
+				if (strcmp(buf, "HELLO\n") == 0)
+				{
+					*playercount += 1;
+					char number[32];
+					sprintf(number, "%d", size);
+
+					char size_string[64] = "SIZE ";
+					strcat(size_string, number);
+					strcat(size_string, "\n");
+
+					int sent = send(client_sock_fd, size_string, sizeof(size_string), 0);
+					if (sent < 0)
+						perror("send");
+				}
+				memset(buf, 0, sizeof(buf));
 			}
-			buf[nbytes] = '\0';
-
-			printf("server: received %s", buf);
-
-			char number[32];
-			sprintf(number, "%d", size);
-
-			char size_string[64] = "SIZE ";
-			strcat(size_string, number);
-			strcat(size_string, "\n");
-
-			int sent = send(client_sock_fd, size_string, sizeof(size_string), 0);
-			if (sent < 0)
-				perror("send");
-
 			close(client_sock_fd);
+			*playercount -= 1;
 			exit(0);
 		}
 		close(client_sock_fd);
+
 	}
 }
 
@@ -225,8 +246,6 @@ config process_options(int argc, char const *argv[], config server)
 	return server;
 }
 
-field **playground;
-
 void create_field(int size)
 {
 	int i;
@@ -255,6 +274,9 @@ int main(int argc, char const *argv[])
 	freeaddrinfo(servinfo);
 
 	create_field(server.size);
+
+	playercount = mmap(NULL, sizeof(int), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+	*playercount = 0;
 
 	listen_on(sock.fd, 10);
 

@@ -145,6 +145,8 @@ int main(int argc, char const *argv[])
 		perror("send");
 
 	char buf[MAXDATA];
+	int size = 0;
+
 	int nbytes = recv(sock.fd, buf, MAXDATA - 1, 0);
 	if (nbytes < 0)
 	{
@@ -154,6 +156,15 @@ int main(int argc, char const *argv[])
 	buf[nbytes] = '\0';
 
 	printf("client: received %s", buf);
+
+	if (strncmp(buf, "SIZE", 4) == 0)
+	{
+		size = atoi(buf+5);
+		while(1)
+		{
+
+		}
+	}
 
 	close(sock.fd);
 
