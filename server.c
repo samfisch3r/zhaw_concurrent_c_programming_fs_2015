@@ -172,46 +172,46 @@ static void accept_clients(int sockfd, int size)
 			char buf[MAXDATA];
 			int nbytes;
 
+			nbytes = recv(client_sock_fd, buf, MAXDATA - 1, 0);
+			if (nbytes < 0)
+			{
+				perror("recv");
+				exit(1);
+			}
+
+			buf[nbytes] = '\0';
+			printf("server: received %s", buf);
+
+			if (strcmp(buf, "HELLO\n") == 0)
+			{
+				*playercount += 1;
+				char number[32];
+				sprintf(number, "%d", size);
+
+				char size_string[64] = "SIZE ";
+				strcat(size_string, number);
+				strcat(size_string, "\n");
+
+				int sent = send(client_sock_fd, size_string, sizeof(size_string), 0);
+				if (sent < 0)
+					perror("send");
+			}
+			memset(buf, 0, sizeof(buf));
+
 			while(*playercount < size/2)
 			{
-				nbytes = recv(client_sock_fd, buf, MAXDATA - 1, 0);
-				if (nbytes < 0)
-				{
-					perror("recv");
-					exit(1);
-				}
-				if (nbytes == 0)
-				{
-					close(client_sock_fd);
-					*playercount -= 1;
-					exit(0);
-				}
-
-				buf[nbytes] = '\0';
-				printf("server: received %s", buf);
-
-				if (strcmp(buf, "HELLO\n") == 0)
-				{
-					*playercount += 1;
-					char number[32];
-					sprintf(number, "%d", size);
-
-					char size_string[64] = "SIZE ";
-					strcat(size_string, number);
-					strcat(size_string, "\n");
-
-					int sent = send(client_sock_fd, size_string, sizeof(size_string), 0);
-					if (sent < 0)
-						perror("send");
-				}
-				memset(buf, 0, sizeof(buf));
+				// wait for enough players
 			}
+			usleep(50000);
+			int sent = send(client_sock_fd, "START\n", 7, 0);
+			if (sent < 0)
+				perror("send");
+
 			close(client_sock_fd);
 			*playercount -= 1;
 			exit(0);
 		}
 		close(client_sock_fd);
-
 	}
 }
 

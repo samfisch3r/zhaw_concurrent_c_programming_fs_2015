@@ -160,9 +160,21 @@ int main(int argc, char const *argv[])
 	if (strncmp(buf, "SIZE", 4) == 0)
 	{
 		size = atoi(buf+5);
+		memset(buf, 0, sizeof(buf));
 		while(1)
 		{
-
+			int nbytes = recv(sock.fd, buf, MAXDATA - 1, 0);
+			if (nbytes < 0)
+			{
+				perror("recv");
+				exit(1);
+			}
+			buf[nbytes] = '\0';
+			if (strcmp(buf, "START\n") == 0)
+			{
+				memset(buf, 0, sizeof(buf));
+				break;
+			}
 		}
 	}
 
