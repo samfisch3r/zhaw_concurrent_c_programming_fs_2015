@@ -175,6 +175,11 @@ int main(int argc, char const *argv[])
 				memset(buf, 0, sizeof(buf));
 				break;
 			}
+			if (strcmp(buf, "NACK\n") == 0)
+			{
+				close(sock.fd);
+				exit(0);
+			}
 		}
 	}
 

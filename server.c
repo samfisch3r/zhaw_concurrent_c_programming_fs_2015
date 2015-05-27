@@ -14,6 +14,7 @@
 
 #define CHECK 5
 #define MAXDATA 256
+#define MAXPLAYER 32767
 
 typedef struct
 {
@@ -184,6 +185,14 @@ static void accept_clients(int sockfd, int size)
 
 			if (strcmp(buf, "HELLO\n") == 0)
 			{
+				if (playercount == MAXPLAYER)
+				{
+					int sent = send(client_sock_fd, "NACK\n", 6, 0);
+					if (sent < 0)
+						perror("send");
+					close(client_sock_fd);
+					exit(0);
+				}
 				*playercount += 1;
 				char number[32];
 				sprintf(number, "%d", size);
