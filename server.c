@@ -11,6 +11,8 @@
 #include <sys/wait.h>
 #include <arpa/inet.h>
 #include <sys/mman.h>
+#include <fcntl.h>
+#include <semaphore.h>
 
 #define CHECK 5
 #define MAXDATA 256
@@ -148,6 +150,11 @@ static void accept_clients(int sockfd, int size)
 	int client_sock_fd;
 	char client_in_addr_s[INET6_ADDRSTRLEN];
 	int is_child_process;
+	sem_t *playcountlock = sem_open("playerSem", O_CREAT | O_EXCL, 0644, 0);
+	if (playcountlock == SEM_FAILED)
+		perror("sem_open");
+	if(sem_unlink("playerSem"))
+		perror("sem_unlink");
 
 	while(1)
 	{
@@ -185,7 +192,7 @@ static void accept_clients(int sockfd, int size)
 
 			if (strcmp(buf, "HELLO\n") == 0)
 			{
-				if (playercount == MAXPLAYER)
+				if (*playercount == MAXPLAYER)
 				{
 					int sent = send(client_sock_fd, "NACK\n", 6, 0);
 					if (sent < 0)
@@ -193,7 +200,10 @@ static void accept_clients(int sockfd, int size)
 					close(client_sock_fd);
 					exit(0);
 				}
+				if (sem_wait(playcountlock))
+					perror("sem_wait");
 				*playercount += 1;
+				sem_post(playcountlock);
 				char number[32];
 				sprintf(number, "%d", size);
 
@@ -217,7 +227,9 @@ static void accept_clients(int sockfd, int size)
 				perror("send");
 
 			close(client_sock_fd);
+			sem_wait(playcountlock);
 			*playercount -= 1;
+			sem_post(playcountlock);
 			exit(0);
 		}
 		close(client_sock_fd);

@@ -12,4 +12,4 @@ client:
 	$(CC) $(APP).c $(CFLAGS) -o $(APP)
 
 server:
-	$(CC) $(SERV).c $(CFLAGS) -o $(SERV)
+	$(CC) $(SERV).c $(CFLAGS) -pthread -o $(SERV)
