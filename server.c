@@ -27,7 +27,7 @@ typedef struct
 
 typedef struct
 {
-	int free;
+	sem_t *lock;
 	char *name;
 } field;
 
@@ -232,6 +232,8 @@ static void accept_clients(int sockfd, int size)
 			if (sent < 0)
 				perror("send");
 
+			// PLAY
+
 			close(client_sock_fd);
 
 			if (sem_wait(playcountlock))
@@ -283,6 +285,25 @@ void create_field(int size)
 	playground = (field **) malloc(sizeof(field *) * size);
 	for (i = 0; i < size; ++i)
 		playground[i] = (field *) malloc(sizeof(field) * size);
+
+	int x,y;
+	for (y = 0; y < size; ++y)
+	{
+		for (x = 0; x < size; ++x)
+		{
+			char number[12];
+			sprintf(number, "%d", x+y*size);
+			char lock_name[16] = "Lock";
+			strcat(lock_name, number);
+			printf("%s\n", lock_name);
+			playground[x][y].lock = sem_open(lock_name, O_CREAT | O_EXCL, 0644, 0);
+			if (playground[x][y].lock == SEM_FAILED)
+				perror("sem_open");
+			if(sem_unlink(lock_name))
+				perror("sem_unlink");
+			sem_post(playground[x][y].lock);
+		}
+	}
 }
 
 int main(int argc, char const *argv[])
@@ -307,9 +328,19 @@ int main(int argc, char const *argv[])
 	create_field(server.size);
 
 	playercount = mmap(NULL, sizeof(int), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+	if (playercount == MAP_FAILED)
+	{
+		perror("mmap");
+		exit(1);
+	}
 	*playercount = 0;
 
 	*playground = mmap(NULL, sizeof(**playground), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+	if (*playground == MAP_FAILED)
+	{
+		perror("mmap");
+		exit(1);
+	}
 
 	listen_on(sock.fd, 10);
 
