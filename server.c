@@ -12,6 +12,7 @@
 #include <arpa/inet.h>
 #include <sys/mman.h>
 #include <fcntl.h>
+#include <sys/stat.h>
 #include <semaphore.h>
 
 #define CHECK 5
@@ -150,11 +151,13 @@ static void accept_clients(int sockfd, int size)
 	int client_sock_fd;
 	char client_in_addr_s[INET6_ADDRSTRLEN];
 	int is_child_process;
+
 	sem_t *playcountlock = sem_open("playerSem", O_CREAT | O_EXCL, 0644, 0);
 	if (playcountlock == SEM_FAILED)
 		perror("sem_open");
 	if(sem_unlink("playerSem"))
 		perror("sem_unlink");
+	sem_post(playcountlock);
 
 	while(1)
 	{
@@ -200,10 +203,13 @@ static void accept_clients(int sockfd, int size)
 					close(client_sock_fd);
 					exit(0);
 				}
+
 				if (sem_wait(playcountlock))
 					perror("sem_wait");
 				*playercount += 1;
-				sem_post(playcountlock);
+				if (sem_post(playcountlock))
+					perror("sem_post");
+				
 				char number[32];
 				sprintf(number, "%d", size);
 
@@ -227,9 +233,13 @@ static void accept_clients(int sockfd, int size)
 				perror("send");
 
 			close(client_sock_fd);
-			sem_wait(playcountlock);
+
+			if (sem_wait(playcountlock))
+				perror("sem_wait");
 			*playercount -= 1;
-			sem_post(playcountlock);
+			if (sem_post(playcountlock))
+				perror("sem_post");
+
 			exit(0);
 		}
 		close(client_sock_fd);
