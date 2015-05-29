@@ -144,6 +144,37 @@ static void listen_on(int sockfd, int backlog)
 	}
 }
 
+void check_field(int size)
+{
+	int x,y;
+	int stage = 0;
+	do
+	{
+		for (y = 0; y < size; ++y)
+		{
+			for (x = 0; x < size; ++x)
+			{
+				if (!stage)
+				{
+					if (sem_wait(playground[x][y].lock))
+						perror("sem_wait");
+				}
+				else if (stage == 1)
+				{
+					// COUNT NAMES
+					printf("FIELD X=%i, Y=%i, NAME=%s\n", x, y, playground[x][y].name);
+				}
+				else
+				{
+					if (sem_post(playground[x][y].lock))
+						perror("sem_post");
+				}
+			}
+		}
+		stage++;
+	} while (stage != 2);
+}
+
 static void accept_clients(int sockfd, int size)
 {
 	struct sockaddr_storage client_addr;
@@ -295,13 +326,13 @@ void create_field(int size)
 			sprintf(number, "%d", x+y*size);
 			char lock_name[16] = "Lock";
 			strcat(lock_name, number);
-			printf("%s\n", lock_name);
 			playground[x][y].lock = sem_open(lock_name, O_CREAT | O_EXCL, 0644, 0);
 			if (playground[x][y].lock == SEM_FAILED)
 				perror("sem_open");
 			if(sem_unlink(lock_name))
 				perror("sem_unlink");
 			sem_post(playground[x][y].lock);
+			playground[x][y].name = "";
 		}
 	}
 }
@@ -326,6 +357,8 @@ int main(int argc, char const *argv[])
 	freeaddrinfo(servinfo);
 
 	create_field(server.size);
+
+	check_field(server.size);
 
 	playercount = mmap(NULL, sizeof(int), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
 	if (playercount == MAP_FAILED)

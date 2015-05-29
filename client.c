@@ -181,6 +181,8 @@ int main(int argc, char const *argv[])
 				exit(0);
 			}
 		}
+
+		// START PLAYING
 	}
 
 	close(sock.fd);
