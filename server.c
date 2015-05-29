@@ -209,7 +209,7 @@ static void accept_clients(int sockfd, int size)
 				*playercount += 1;
 				if (sem_post(playcountlock))
 					perror("sem_post");
-				
+
 				char number[32];
 				sprintf(number, "%d", size);
 
@@ -308,6 +308,8 @@ int main(int argc, char const *argv[])
 
 	playercount = mmap(NULL, sizeof(int), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
 	*playercount = 0;
+
+	*playground = mmap(NULL, sizeof(**playground), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
 
 	listen_on(sock.fd, 10);
 
