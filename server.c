@@ -148,6 +148,8 @@ void check_field(int size)
 {
 	int x,y;
 	int stage = 0;
+	int fail = 0;
+	char *lastfield;
 	do
 	{
 		for (y = 0; y < size; ++y)
@@ -161,8 +163,13 @@ void check_field(int size)
 				}
 				else if (stage == 1)
 				{
-					// COUNT NAMES
+					if ((x != 0) && (y != 0))
+					{
+						if ((playground[x][y].name != lastfield) && (playground[x][y].name != ""))
+							fail++;
+					}
 					printf("FIELD X=%i, Y=%i, NAME=%s\n", x, y, playground[x][y].name);
+					lastfield = playground[x][y].name;
 				}
 				else
 				{
@@ -173,6 +180,10 @@ void check_field(int size)
 		}
 		stage++;
 	} while (stage != 2);
+	if (!fail)
+	{
+		// WINNER is lastfield
+	}
 }
 
 static void accept_clients(int sockfd, int size)
