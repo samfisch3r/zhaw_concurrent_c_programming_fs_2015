@@ -140,7 +140,9 @@ int main(int argc, char const *argv[])
 
 	freeaddrinfo(servinfo);
 
-	int sent = send(sock.fd, "HELLO\n", 7, 0);
+	int sent;
+
+	sent = send(sock.fd, "HELLO\n", 7, 0);
 	if (sent < 0)
 		perror("send");
 
@@ -183,6 +185,9 @@ int main(int argc, char const *argv[])
 		}
 
 		// START PLAYING
+		sent = send(sock.fd, "TAKE 2 4 HANS\n", 15, 0);
+		if (sent < 0)
+			perror("send");
 	}
 
 	close(sock.fd);

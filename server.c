@@ -223,6 +223,7 @@ static void accept_clients(int sockfd, int size)
 
 			char buf[MAXDATA];
 			int nbytes;
+			int sent;
 
 			nbytes = recv(client_sock_fd, buf, MAXDATA - 1, 0);
 			if (nbytes < 0)
@@ -238,7 +239,7 @@ static void accept_clients(int sockfd, int size)
 			{
 				if (*playercount == MAXPLAYER)
 				{
-					int sent = send(client_sock_fd, "NACK\n", 6, 0);
+					sent = send(client_sock_fd, "NACK\n", 6, 0);
 					if (sent < 0)
 						perror("send");
 					close(client_sock_fd);
@@ -258,22 +259,92 @@ static void accept_clients(int sockfd, int size)
 				strcat(size_string, number);
 				strcat(size_string, "\n");
 
-				int sent = send(client_sock_fd, size_string, sizeof(size_string), 0);
+				sent = send(client_sock_fd, size_string, sizeof(size_string), 0);
 				if (sent < 0)
 					perror("send");
+				
 			}
-			memset(buf, 0, sizeof(buf));
+			else
+			{
+				close(client_sock_fd);
+				exit(0);
+			}
 
 			while(*playercount < size/2)
 			{
 				// wait for enough players
 			}
 			usleep(50000);
-			int sent = send(client_sock_fd, "START\n", 7, 0);
+
+			sent = send(client_sock_fd, "START\n", 7, 0);
 			if (sent < 0)
 				perror("send");
 
-			// PLAY
+			while(1)
+			{
+				memset(buf, 0, sizeof(buf));
+				nbytes = 0;
+
+				nbytes = recv(client_sock_fd, buf, MAXDATA - 1, 0);
+				if (nbytes < 0)
+				{
+					perror("recv");
+					exit(1);
+				}
+				buf[nbytes] = '\0';
+
+				if (nbytes)
+				{
+					fprintf(stderr, "server: received %s", buf);
+
+					if (end != "")
+					{
+						char won[256] = "END ";
+						strcat(won, end);
+						strcat(won, "\n");
+						sent = send(client_sock_fd, won, sizeof(won), 0);
+						if (sent < 0)
+							perror("send");
+					}
+
+					char string[256];
+					char delimiter[] = " ";
+					char *ptr;
+
+					strncpy(string, buf, nbytes);
+
+					ptr = strtok(string, delimiter);
+
+					ptr = strtok(NULL, delimiter);
+					int x = atoi(ptr);
+					ptr = strtok(NULL, delimiter);
+					int y = atoi(ptr);
+
+					if (strncmp(buf, "TAKE", 4) == 0)
+					{
+						// CHECK IF Semaphore is available
+						ptr = strtok(NULL, delimiter);
+						if (sem_wait(playground[x][y].lock))
+							perror("sem_wait");
+						playground[x][y].name = ptr;
+						if (sem_post(playground[x][y].lock))
+							perror("sem_post");
+					}
+
+					if (strncmp(buf, "STATUS", 6) == 0)
+					{
+						if (sem_wait(playground[x][y].lock))
+							perror("sem_wait");
+						char name[256];
+						strcpy(name, playground[x][y].name);
+						if (sem_post(playground[x][y].lock))
+							perror("sem_post");
+						sent = send(client_sock_fd, name, sizeof(name), 0);
+						if (sent < 0)
+							perror("send");
+					}
+				}
+			}
 
 			close(client_sock_fd);
 
