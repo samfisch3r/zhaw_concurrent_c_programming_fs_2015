@@ -41,6 +41,7 @@ typedef struct sock_s sock_t;
 
 field **playground;
 int *playercount;
+char *end;
 
 struct addrinfo init_hints(int sock_type, int flags)
 {
@@ -181,9 +182,7 @@ void check_field(int size)
 		stage++;
 	} while (stage != 2);
 	if (!fail)
-	{
-		// WINNER is lastfield
-	}
+		end = lastfield;
 }
 
 static void accept_clients(int sockfd, int size)
@@ -353,6 +352,25 @@ int main(int argc, char const *argv[])
 	config server;
 	server = process_options(argc, argv, server);
 
+	end = mmap(NULL, sizeof(*end), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+	if (end == MAP_FAILED)
+	{
+		perror("mmap");
+		exit(1);
+	}
+	end = "";
+
+	int is_child_process;
+	is_child_process = !fork();
+	if (is_child_process)
+	{
+		while(1)
+		{
+			check_field(server.size);
+			sleep(CHECK);
+		}
+	}
+
 	struct addrinfo hints = init_hints(SOCK_STREAM, AI_PASSIVE);
 
 	struct addrinfo *servinfo = resolve_dns(&hints, NULL, server.port);
@@ -368,8 +386,6 @@ int main(int argc, char const *argv[])
 	freeaddrinfo(servinfo);
 
 	create_field(server.size);
-
-	check_field(server.size);
 
 	playercount = mmap(NULL, sizeof(int), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
 	if (playercount == MAP_FAILED)
