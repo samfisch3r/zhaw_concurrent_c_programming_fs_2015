@@ -136,7 +136,7 @@ int main(int argc, char const *argv[])
 	void *server_in_addr = get_in_addr((struct sockaddr *)&sock.addr);
 	inet_ntop(sock.addr->ai_family, server_in_addr, server_in_addr_s, sizeof server_in_addr_s);
 
-	printf("client: connecting to %s\n", server_in_addr_s);
+	fprintf(stderr, "client: connecting to %s\n", server_in_addr_s);
 
 	freeaddrinfo(servinfo);
 
@@ -155,7 +155,7 @@ int main(int argc, char const *argv[])
 	}
 	buf[nbytes] = '\0';
 
-	printf("client: received %s", buf);
+	fprintf(stderr, "client: received %s", buf);
 
 	if (strncmp(buf, "SIZE", 4) == 0)
 	{

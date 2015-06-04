@@ -169,7 +169,7 @@ void check_field(int size)
 						if ((playground[x][y].name != lastfield) && (playground[x][y].name != ""))
 							fail++;
 					}
-					printf("FIELD X=%i, Y=%i, NAME=%s\n", x, y, playground[x][y].name);
+					fprintf(stderr, "FIELD X=%i, Y=%i, NAME=%s\n", x, y, playground[x][y].name);
 					lastfield = playground[x][y].name;
 				}
 				else
@@ -214,7 +214,7 @@ static void accept_clients(int sockfd, int size)
 		void *client_in_addr = get_in_addr((struct sockaddr *)&client_addr);
 
 		inet_ntop(client_addr.ss_family, client_in_addr, client_in_addr_s, sizeof client_in_addr_s);
-		printf("server: got connection from %s\n", client_in_addr_s);
+		fprintf(stderr, "server: got connection from %s\n", client_in_addr_s);
 
 		is_child_process = !fork();
 		if (is_child_process)
@@ -232,7 +232,7 @@ static void accept_clients(int sockfd, int size)
 			}
 
 			buf[nbytes] = '\0';
-			printf("server: received %s", buf);
+			fprintf(stderr, "server: received %s", buf);
 
 			if (strcmp(buf, "HELLO\n") == 0)
 			{
@@ -406,7 +406,7 @@ int main(int argc, char const *argv[])
 
 	reap_dead_processes();
 
-	printf("server: waiting for connections on port %s ...\n", server.port);
+	fprintf(stderr, "server: waiting for connections on port %s ...\n", server.port);
 
 	accept_clients(sock.fd, server.size);
 
