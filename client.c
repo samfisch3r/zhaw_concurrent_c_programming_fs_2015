@@ -163,7 +163,6 @@ int main(int argc, char const *argv[])
 	{
 		size = atoi(buf+5);
 		memset(buf, 0, sizeof(buf));
-		nbytes = 0;
 
 		while(1)
 		{
@@ -191,7 +190,6 @@ int main(int argc, char const *argv[])
 				for (x = 0; x < size; ++x)
 				{
 					memset(buf, 0, sizeof(buf));
-					nbytes = 0;
 
 					char take[256] = "TAKE ";
 					char field[32];
@@ -211,7 +209,7 @@ int main(int argc, char const *argv[])
 
 					sent = send(sock.fd, take, sizeof(take), 0);
 					if (sent < 0)
-						perror("send");	
+						perror("send");
 
 					do
 					{
@@ -228,8 +226,6 @@ int main(int argc, char const *argv[])
 				}
 			}
 		}
-
-		
 	}
 
 	close(sock.fd);

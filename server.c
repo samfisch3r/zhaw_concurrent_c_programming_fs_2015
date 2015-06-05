@@ -151,6 +151,8 @@ void check_field(int size)
 	int stage = 0;
 	int fail = 0;
 	char *lastfield;
+
+	int val;
 	do
 	{
 		for (y = 0; y < size; ++y)
@@ -159,8 +161,10 @@ void check_field(int size)
 			{
 				if (!stage)
 				{
+					sem_getvalue(playground[x+y*size].lock, &val);
 					if (sem_wait(playground[x+y*size].lock))
 						perror("sem_wait");
+					sem_getvalue(playground[x+y*size].lock, &val);
 				}
 				else if (stage == 1)
 				{
@@ -174,13 +178,15 @@ void check_field(int size)
 				}
 				else
 				{
+					sem_getvalue(playground[x+y*size].lock, &val);
 					if (sem_post(playground[x+y*size].lock))
 						perror("sem_post");
+					sem_getvalue(playground[x+y*size].lock, &val);
 				}
 			}
 		}
 		stage++;
-	} while (stage != 2);
+	} while (stage < 3);
 	if (!fail)
 		end = lastfield;
 }
@@ -283,7 +289,6 @@ static void accept_clients(int sockfd, int size)
 			while(1)
 			{
 				memset(buf, 0, sizeof(buf));
-				nbytes = 0;
 
 				nbytes = recv(client_sock_fd, buf, MAXDATA - 1, 0);
 				if (nbytes < 0)
@@ -291,10 +296,12 @@ static void accept_clients(int sockfd, int size)
 					perror("recv");
 					exit(1);
 				}
-				buf[nbytes] = '\0';
 
-				if (nbytes)
+				printf("NBYTES %i\n", nbytes);
+
+				if (nbytes > 1)
 				{
+					buf[nbytes] = '\0';
 					fprintf(stderr, "server: received %s", buf);
 
 					if (end != "")
@@ -382,7 +389,7 @@ config process_options(int argc, char const *argv[], config server)
 	if (argc == 2)
 	{
 		server.size = atoi(argv[1]);
-		if (server.size >= 4)
+		if (server.size >= 2)
 			server.port = "1234";
 		else
 			printUsage(argv[0]);
