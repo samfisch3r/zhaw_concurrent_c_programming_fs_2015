@@ -211,16 +211,19 @@ int main(int argc, char const *argv[])
 
 					sent = send(sock.fd, take, sizeof(take), 0);
 					if (sent < 0)
-						perror("send");		
+						perror("send");	
 
-					nbytes = recv(sock.fd, buf, MAXDATA - 1, 0);
-					if (nbytes < 0)
+					do
 					{
-						perror("recv");
-						exit(1);
-					}
+						nbytes = recv(sock.fd, buf, MAXDATA - 1, 0);
+						if (nbytes < 0)
+						{
+							perror("recv");
+							exit(1);
+						}
+						
+					} while(nbytes == 0);
 					buf[nbytes] = '\0';
-
 					fprintf(stderr, "client: received %s", buf);
 				}
 			}

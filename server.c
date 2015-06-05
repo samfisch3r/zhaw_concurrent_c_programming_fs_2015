@@ -216,6 +216,10 @@ static void accept_clients(int sockfd, int size)
 		inet_ntop(client_addr.ss_family, client_in_addr, client_in_addr_s, sizeof client_in_addr_s);
 		fprintf(stderr, "server: got connection from %s\n", client_in_addr_s);
 
+		int val;
+		sem_getvalue(playground[0][0].lock, &val);
+		printf("%d\n", val);
+
 		is_child_process = !fork();
 		if (is_child_process)
 		{
@@ -324,15 +328,17 @@ static void accept_clients(int sockfd, int size)
 					{
 						char *ret;
 						ptr = strtok(NULL, delimiter);
-						if (sem_trywait(playground[x][y].lock) == 0)
+
+						if (sem_trywait(playground[x][y].lock) < 0)
+							ret = "INUSE\n";
+						else
 						{
 							playground[x][y].name = ptr;
 							ret = "TAKEN\n";
 							if (sem_post(playground[x][y].lock))
 								perror("sem_post");
 						}
-						else
-							ret = "INUSE\n";
+
 						sent = send(client_sock_fd, ret, sizeof(ret), 0);
 						if (sent < 0)
 							perror("send");
@@ -419,7 +425,6 @@ void create_field(int size)
 				perror("sem_open");
 			if(sem_unlink(lock_name))
 				perror("sem_unlink");
-			sem_post(playground[x][y].lock);
 			playground[x][y].name = "";
 		}
 	}
@@ -437,17 +442,6 @@ int main(int argc, char const *argv[])
 		exit(1);
 	}
 	end = "";
-
-	int is_child_process;
-	is_child_process = !fork();
-	if (is_child_process)
-	{
-		while(1)
-		{
-			check_field(server.size);
-			sleep(CHECK);
-		}
-	}
 
 	struct addrinfo hints = init_hints(SOCK_STREAM, AI_PASSIVE);
 
@@ -478,6 +472,17 @@ int main(int argc, char const *argv[])
 	{
 		perror("mmap");
 		exit(1);
+	}
+
+	int is_child_process;
+	is_child_process = !fork();
+	if (is_child_process)
+	{
+		while(1)
+		{
+			check_field(server.size);
+			sleep(CHECK);
+		}
 	}
 
 	listen_on(sock.fd, 10);
