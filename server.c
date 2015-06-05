@@ -39,7 +39,7 @@ struct sock_s
 
 typedef struct sock_s sock_t;
 
-field **playground;
+field *playground;
 int *playercount;
 char *end;
 
@@ -159,22 +159,22 @@ void check_field(int size)
 			{
 				if (!stage)
 				{
-					if (sem_wait(playground[x][y].lock))
+					if (sem_wait(playground[x+y*size].lock))
 						perror("sem_wait");
 				}
 				else if (stage == 1)
 				{
 					if ((x != 0) && (y != 0))
 					{
-						if ((playground[x][y].name != lastfield) && (playground[x][y].name != ""))
+						if ((playground[x+y*size].name != lastfield) && (playground[x+y*size].name != ""))
 							fail++;
 					}
-					fprintf(stderr, "FIELD X=%i, Y=%i, NAME=%s\n", x, y, playground[x][y].name);
-					lastfield = playground[x][y].name;
+					fprintf(stderr, "FIELD X=%i, Y=%i, NAME=%s\n", x, y, playground[x+y*size].name);
+					lastfield = playground[x+y*size].name;
 				}
 				else
 				{
-					if (sem_post(playground[x][y].lock))
+					if (sem_post(playground[x+y*size].lock))
 						perror("sem_post");
 				}
 			}
@@ -215,10 +215,6 @@ static void accept_clients(int sockfd, int size)
 
 		inet_ntop(client_addr.ss_family, client_in_addr, client_in_addr_s, sizeof client_in_addr_s);
 		fprintf(stderr, "server: got connection from %s\n", client_in_addr_s);
-
-		int val;
-		sem_getvalue(playground[0][0].lock, &val);
-		printf("%d\n", val);
 
 		is_child_process = !fork();
 		if (is_child_process)
@@ -329,13 +325,13 @@ static void accept_clients(int sockfd, int size)
 						char *ret;
 						ptr = strtok(NULL, delimiter);
 
-						if (sem_trywait(playground[x][y].lock) < 0)
+						if (sem_trywait(playground[x+y*size].lock) < 0)
 							ret = "INUSE\n";
 						else
 						{
-							playground[x][y].name = ptr;
+							playground[x+y*size].name = ptr;
 							ret = "TAKEN\n";
-							if (sem_post(playground[x][y].lock))
+							if (sem_post(playground[x+y*size].lock))
 								perror("sem_post");
 						}
 
@@ -346,11 +342,11 @@ static void accept_clients(int sockfd, int size)
 
 					if (strncmp(buf, "STATUS", 6) == 0)
 					{
-						if (sem_wait(playground[x][y].lock))
+						if (sem_wait(playground[x+y*size].lock))
 							perror("sem_wait");
 						char name[256];
-						strcpy(name, playground[x][y].name);
-						if (sem_post(playground[x][y].lock))
+						strcpy(name, playground[x+y*size].name);
+						if (sem_post(playground[x+y*size].lock))
 							perror("sem_post");
 						sent = send(client_sock_fd, name, sizeof(name), 0);
 						if (sent < 0)
@@ -407,9 +403,7 @@ config process_options(int argc, char const *argv[], config server)
 void create_field(int size)
 {
 	int i;
-	playground = (field **) malloc(sizeof(field *) * size);
-	for (i = 0; i < size; ++i)
-		playground[i] = (field *) malloc(sizeof(field) * size);
+	playground = malloc(sizeof(field) * size);
 
 	int x,y;
 	for (y = 0; y < size; ++y)
@@ -420,12 +414,14 @@ void create_field(int size)
 			sprintf(number, "%d", x+y*size);
 			char lock_name[16] = "Lock";
 			strcat(lock_name, number);
-			playground[x][y].lock = sem_open(lock_name, O_CREAT | O_EXCL, 0644, 0);
-			if (playground[x][y].lock == SEM_FAILED)
+			playground[x+y*size].lock = sem_open(lock_name, O_CREAT | O_EXCL, 0644, 0);
+			if (playground[x+y*size].lock == SEM_FAILED)
 				perror("sem_open");
 			if(sem_unlink(lock_name))
 				perror("sem_unlink");
-			playground[x][y].name = "";
+			playground[x+y*size].name = "";
+			if(sem_post(playground[x+y*size].lock))
+				perror("sem_post");
 		}
 	}
 }
@@ -457,8 +453,6 @@ int main(int argc, char const *argv[])
 
 	freeaddrinfo(servinfo);
 
-	create_field(server.size);
-
 	playercount = mmap(NULL, sizeof(int), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
 	if (playercount == MAP_FAILED)
 	{
@@ -467,23 +461,25 @@ int main(int argc, char const *argv[])
 	}
 	*playercount = 0;
 
-	*playground = mmap(NULL, sizeof(**playground), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
-	if (*playground == MAP_FAILED)
+	playground = mmap(NULL, sizeof(*playground), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+	if (playground == MAP_FAILED)
 	{
 		perror("mmap");
 		exit(1);
 	}
 
-	int is_child_process;
-	is_child_process = !fork();
-	if (is_child_process)
-	{
-		while(1)
-		{
-			check_field(server.size);
-			sleep(CHECK);
-		}
-	}
+	create_field(server.size);
+
+	// int is_child_process;
+	// is_child_process = !fork();
+	// if (is_child_process)
+	// {
+	// 	while(1)
+	// 	{
+	// 		check_field(server.size);
+	// 		sleep(CHECK);
+	// 	}
+	// }
 
 	listen_on(sock.fd, 10);
 
