@@ -297,8 +297,6 @@ static void accept_clients(int sockfd, int size)
 					exit(1);
 				}
 
-				printf("NBYTES %i\n", nbytes);
-
 				if (nbytes > 1)
 				{
 					buf[nbytes] = '\0';
@@ -389,7 +387,7 @@ config process_options(int argc, char const *argv[], config server)
 	if (argc == 2)
 	{
 		server.size = atoi(argv[1]);
-		if (server.size >= 2)
+		if (server.size >= 4)
 			server.port = "1234";
 		else
 			printUsage(argv[0]);
@@ -477,16 +475,16 @@ int main(int argc, char const *argv[])
 
 	create_field(server.size);
 
-	// int is_child_process;
-	// is_child_process = !fork();
-	// if (is_child_process)
-	// {
-	// 	while(1)
-	// 	{
-	// 		check_field(server.size);
-	// 		sleep(CHECK);
-	// 	}
-	// }
+	int is_child_process;
+	is_child_process = !fork();
+	if (is_child_process)
+	{
+		while(1)
+		{
+			check_field(server.size);
+			sleep(CHECK);
+		}
+	}
 
 	listen_on(sock.fd, 10);
 
