@@ -322,13 +322,20 @@ static void accept_clients(int sockfd, int size)
 
 					if (strncmp(buf, "TAKE", 4) == 0)
 					{
-						// CHECK IF Semaphore is available
+						char *ret;
 						ptr = strtok(NULL, delimiter);
-						if (sem_wait(playground[x][y].lock))
-							perror("sem_wait");
-						playground[x][y].name = ptr;
-						if (sem_post(playground[x][y].lock))
-							perror("sem_post");
+						if (sem_trywait(playground[x][y].lock) == 0)
+						{
+							playground[x][y].name = ptr;
+							ret = "TAKEN\n";
+							if (sem_post(playground[x][y].lock))
+								perror("sem_post");
+						}
+						else
+							ret = "INUSE\n";
+						sent = send(client_sock_fd, ret, sizeof(ret), 0);
+						if (sent < 0)
+							perror("send");
 					}
 
 					if (strncmp(buf, "STATUS", 6) == 0)

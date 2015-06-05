@@ -163,9 +163,11 @@ int main(int argc, char const *argv[])
 	{
 		size = atoi(buf+5);
 		memset(buf, 0, sizeof(buf));
+		nbytes = 0;
+
 		while(1)
 		{
-			int nbytes = recv(sock.fd, buf, MAXDATA - 1, 0);
+			nbytes = recv(sock.fd, buf, MAXDATA - 1, 0);
 			if (nbytes < 0)
 			{
 				perror("recv");
@@ -173,10 +175,7 @@ int main(int argc, char const *argv[])
 			}
 			buf[nbytes] = '\0';
 			if (strcmp(buf, "START\n") == 0)
-			{
-				memset(buf, 0, sizeof(buf));
 				break;
-			}
 			if (strcmp(buf, "NACK\n") == 0)
 			{
 				close(sock.fd);
@@ -184,10 +183,50 @@ int main(int argc, char const *argv[])
 			}
 		}
 
-		// START PLAYING
-		sent = send(sock.fd, "TAKE 2 4 HANS\n", 15, 0);
-		if (sent < 0)
-			perror("send");
+		while(1)
+		{
+			int x,y;
+			for (y = 0; y < size; ++y)
+			{
+				for (x = 0; x < size; ++x)
+				{
+					memset(buf, 0, sizeof(buf));
+					nbytes = 0;
+
+					char take[256] = "TAKE ";
+					char field[32];
+
+					sprintf(field, "%d", x);
+					strcat(field, " ");
+					strcat(take, field);
+					memset(field, 0, sizeof(field));
+
+					sprintf(field, "%d", y);
+					strcat(field, " ");
+					strcat(take, field);
+					memset(field, 0, sizeof(field));
+
+					strcat(take, client.name);
+					strcat(take, "\n");
+
+					sent = send(sock.fd, take, sizeof(take), 0);
+					if (sent < 0)
+						perror("send");		
+
+					nbytes = recv(sock.fd, buf, MAXDATA - 1, 0);
+					if (nbytes < 0)
+					{
+						perror("recv");
+						exit(1);
+					}
+					buf[nbytes] = '\0';
+
+					fprintf(stderr, "client: received %s", buf);
+				}
+			}
+		}
+
+		
 	}
 
 	close(sock.fd);
