@@ -15,7 +15,7 @@
 #include <sys/stat.h>
 #include <semaphore.h>
 
-#define CHECK 5
+#define CHECK 2
 #define MAXDATA 256
 #define MAXPLAYER 32767
 
@@ -165,12 +165,12 @@ void check_field(int size)
 				}
 				else if (stage == 1)
 				{
-					if ((x != 0) && (y != 0))
+					if (x+y*size != 0)
 					{
-						if ((playground[x+y*size].name != lastfield) && (playground[x+y*size].name != ""))
+						if ((strcmp(playground[x+y*size].name, lastfield) != 0) || (strcmp(playground[x+y*size].name, "") == 0))
 							fail++;
 					}
-					fprintf(stderr, "FIELD X=%i, Y=%i, NAME=%s\n", x, y, playground[x+y*size].name);
+					// fprintf(stderr, "FIELD X=%i, Y=%i, NAME=%s\n", x, y, playground[x+y*size].name);
 					lastfield = playground[x+y*size].name;
 				}
 				else
@@ -183,7 +183,7 @@ void check_field(int size)
 		stage++;
 	} while (stage < 3);
 	if (!fail)
-		end = lastfield;
+		strcpy(end, lastfield);
 }
 
 static void accept_clients(int sockfd, int size)
@@ -297,7 +297,7 @@ static void accept_clients(int sockfd, int size)
 					buf[nbytes] = '\0';
 					fprintf(stderr, "server: received %s", buf);
 
-					if (end != "")
+					if (strcmp(end, "") != 0)
 					{
 						char won[256] = "END ";
 						strcat(won, end);
@@ -305,6 +305,7 @@ static void accept_clients(int sockfd, int size)
 						sent = send(client_sock_fd, won, sizeof(won), 0);
 						if (sent < 0)
 							perror("send");
+						break;
 					}
 
 					char string[256];
@@ -435,7 +436,7 @@ int main(int argc, char const *argv[])
 		perror("mmap");
 		exit(1);
 	}
-	end = "";
+	strcpy(end, "");
 
 	struct addrinfo hints = init_hints(SOCK_STREAM, AI_PASSIVE);
 
