@@ -276,7 +276,7 @@ static void accept_clients(int sockfd, int size)
 			{
 				// wait for enough players
 			}
-			usleep(1);
+			usleep(1000);
 
 			sent = send(client_sock_fd, "START\n", 7, 0);
 			if (sent < 0)
