@@ -403,7 +403,6 @@ config process_options(int argc, char const *argv[], config server)
 
 void create_field(int size)
 {
-	int i;
 	int x,y;
 	for (y = 0; y < size; ++y)
 	{
