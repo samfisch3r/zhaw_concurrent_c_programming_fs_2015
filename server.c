@@ -15,7 +15,7 @@
 #include <sys/stat.h>
 #include <semaphore.h>
 
-#define CHECK 2
+#define CHECK 2 // set between 1 and 30
 #define MAXDATA 256
 #define MAXPLAYER 32767
 
@@ -145,7 +145,7 @@ static void listen_on(int sockfd, int backlog)
 	}
 }
 
-void check_field(int size)
+int check_field(int size)
 {
 	int x,y;
 	int stage = 0;
@@ -184,6 +184,7 @@ void check_field(int size)
 	} while (stage < 3);
 	if (!fail)
 		strcpy(end, lastfield);
+	return fail;
 }
 
 static void accept_clients(int sockfd, int size)
@@ -301,7 +302,6 @@ static void accept_clients(int sockfd, int size)
 					{
 						char won[256] = "END ";
 						strcat(won, end);
-						strcat(won, "\n");
 						sent = send(client_sock_fd, won, sizeof(won), 0);
 						if (sent < 0)
 							perror("send");
@@ -343,9 +343,9 @@ static void accept_clients(int sockfd, int size)
 
 					if (strncmp(buf, "STATUS", 6) == 0)
 					{
+						char name[256];
 						if (sem_wait(playground[x+y*size].lock))
 							perror("sem_wait");
-						char name[256];
 						strcpy(name, playground[x+y*size].name);
 						if (sem_post(playground[x+y*size].lock))
 							perror("sem_post");
@@ -477,7 +477,8 @@ int main(int argc, char const *argv[])
 	{
 		while(1)
 		{
-			check_field(server.size);
+			if(!check_field(server.size))
+				exit(0);
 			sleep(CHECK);
 		}
 	}

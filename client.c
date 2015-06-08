@@ -223,7 +223,7 @@ int main(int argc, char const *argv[])
 					} while(nbytes == 0);
 					buf[nbytes] = '\0';
 					fprintf(stderr, "client: received %s", buf);
-					usleep(10000);
+					usleep(50000);
 				}
 			}
 		}
