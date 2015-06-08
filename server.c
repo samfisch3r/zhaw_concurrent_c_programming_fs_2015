@@ -28,7 +28,7 @@ typedef struct
 typedef struct
 {
 	sem_t *lock;
-	char *name;
+	char name[256];
 } field;
 
 struct sock_s
@@ -152,7 +152,6 @@ void check_field(int size)
 	int fail = 0;
 	char *lastfield;
 
-	int val;
 	do
 	{
 		for (y = 0; y < size; ++y)
@@ -161,10 +160,8 @@ void check_field(int size)
 			{
 				if (!stage)
 				{
-					sem_getvalue(playground[x+y*size].lock, &val);
 					if (sem_wait(playground[x+y*size].lock))
 						perror("sem_wait");
-					sem_getvalue(playground[x+y*size].lock, &val);
 				}
 				else if (stage == 1)
 				{
@@ -178,10 +175,8 @@ void check_field(int size)
 				}
 				else
 				{
-					sem_getvalue(playground[x+y*size].lock, &val);
 					if (sem_post(playground[x+y*size].lock))
 						perror("sem_post");
-					sem_getvalue(playground[x+y*size].lock, &val);
 				}
 			}
 		}
@@ -334,7 +329,7 @@ static void accept_clients(int sockfd, int size)
 							ret = "INUSE\n";
 						else
 						{
-							playground[x+y*size].name = ptr;
+							strcpy(playground[x+y*size].name, ptr);
 							ret = "TAKEN\n";
 							if (sem_post(playground[x+y*size].lock))
 								perror("sem_post");
@@ -408,8 +403,6 @@ config process_options(int argc, char const *argv[], config server)
 void create_field(int size)
 {
 	int i;
-	playground = malloc(sizeof(field) * size);
-
 	int x,y;
 	for (y = 0; y < size; ++y)
 	{
@@ -424,7 +417,7 @@ void create_field(int size)
 				perror("sem_open");
 			if(sem_unlink(lock_name))
 				perror("sem_unlink");
-			playground[x+y*size].name = "";
+			strcpy(playground[x+y*size].name, "");
 			if(sem_post(playground[x+y*size].lock))
 				perror("sem_post");
 		}
@@ -465,6 +458,8 @@ int main(int argc, char const *argv[])
 		exit(1);
 	}
 	*playercount = 0;
+
+	playground = malloc(sizeof(field) * server.size);
 
 	playground = mmap(NULL, sizeof(*playground), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
 	if (playground == MAP_FAILED)
