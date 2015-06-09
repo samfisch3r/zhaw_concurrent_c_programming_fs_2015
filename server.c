@@ -17,7 +17,7 @@
 
 #define CHECK 2 // set between 1 and 30
 #define MAXDATA 256
-#define MAXPLAYER 32767
+#define MAXPLAYER 128
 
 typedef struct
 {
@@ -482,7 +482,7 @@ int main(int argc, char const *argv[])
 		}
 	}
 
-	listen_on(sock.fd, 10);
+	listen_on(sock.fd, MAXPLAYER);
 
 	reap_dead_processes();
 
