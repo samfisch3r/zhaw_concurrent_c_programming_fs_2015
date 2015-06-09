@@ -17,7 +17,7 @@
 
 #define CHECK 2 // set between 1 and 30
 #define MAXDATA 256
-#define MAXPLAYER 128
+#define MAXPLAYER 32767
 
 typedef struct
 {
