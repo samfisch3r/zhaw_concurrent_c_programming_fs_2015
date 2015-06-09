@@ -191,7 +191,7 @@ int main(int argc, char const *argv[])
 				{
 					memset(buf, 0, sizeof(buf));
 
-					char take[256] = "TAKE ";
+					char take[MAXDATA] = "TAKE ";
 					char field[32];
 
 					sprintf(field, "%d", x);

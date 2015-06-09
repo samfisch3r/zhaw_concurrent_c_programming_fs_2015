@@ -28,7 +28,7 @@ typedef struct
 typedef struct
 {
 	sem_t *lock;
-	char name[256];
+	char name[MAXDATA];
 } field;
 
 struct sock_s
@@ -300,7 +300,7 @@ static void accept_clients(int sockfd, int size)
 
 					if (strcmp(end, "") != 0)
 					{
-						char won[256] = "END ";
+						char won[MAXDATA] = "END ";
 						strcat(won, end);
 						sent = send(client_sock_fd, won, sizeof(won), 0);
 						if (sent < 0)
@@ -308,7 +308,7 @@ static void accept_clients(int sockfd, int size)
 						break;
 					}
 
-					char string[256];
+					char string[MAXDATA];
 					char delimiter[] = " ";
 					char *ptr;
 
@@ -343,7 +343,7 @@ static void accept_clients(int sockfd, int size)
 
 					if (strncmp(buf, "STATUS", 6) == 0)
 					{
-						char name[256];
+						char name[MAXDATA];
 						if (sem_wait(playground[x+y*size].lock))
 							perror("sem_wait");
 						strcpy(name, playground[x+y*size].name);
