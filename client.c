@@ -83,6 +83,23 @@ static sock_t connect_socket_to_address(struct addrinfo *servinfo)
 	return (sock_t) { sockfd, p };
 }
 
+int sendall(int s, char *buf, int len)
+{
+	int total = 0;
+	int bytesleft = len;
+	int n;
+
+	while (total < len)
+	{
+		n = send(s, buf+total, bytesleft, 0);
+		if (n == -1)
+			break;
+		total += n;
+		bytesleft -= n;
+	}
+	return n == -1 ? -1 : 0;
+}
+
 void printUsage(char const argv[])
 {
 	printf("Usage: %s <name> [port]\n", argv);
@@ -140,11 +157,8 @@ int main(int argc, char const *argv[])
 
 	freeaddrinfo(servinfo);
 
-	int sent;
-
-	sent = send(sock.fd, "HELLO\n", 7, 0);
-	if (sent < 0)
-		perror("send");
+	if (sendall(sock.fd, "HELLO\n", 7) == -1)
+		perror("sendall");
 
 	char buf[MAXDATA];
 	int size = 0;
@@ -207,9 +221,8 @@ int main(int argc, char const *argv[])
 					strcat(take, client.name);
 					strcat(take, "\n");
 
-					sent = send(sock.fd, take, sizeof(take), 0);
-					if (sent < 0)
-						perror("send");
+					if (sendall(sock.fd, take, sizeof(take)) == -1)
+						perror("sendall");
 
 					do
 					{
@@ -223,7 +236,7 @@ int main(int argc, char const *argv[])
 					} while(nbytes == 0);
 					buf[nbytes] = '\0';
 					fprintf(stderr, "client: received %s", buf);
-					usleep(50000);
+					// usleep(50000);
 				}
 			}
 		}

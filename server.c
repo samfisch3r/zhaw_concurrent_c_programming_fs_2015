@@ -145,6 +145,23 @@ static void listen_on(int sockfd, int backlog)
 	}
 }
 
+int sendall(int s, char *buf, int len)
+{
+	int total = 0;
+	int bytesleft = len;
+	int n;
+
+	while (total < len)
+	{
+		n = send(s, buf+total, bytesleft, 0);
+		if (n == -1)
+			break;
+		total += n;
+		bytesleft -= n;
+	}
+	return n == -1 ? -1 : 0;
+}
+
 int check_field(int size)
 {
 	int x,y;
@@ -225,7 +242,6 @@ static void accept_clients(int sockfd, int size)
 
 			char buf[MAXDATA];
 			int nbytes;
-			int sent;
 
 			nbytes = recv(client_sock_fd, buf, MAXDATA - 1, 0);
 			if (nbytes < 0)
@@ -241,9 +257,8 @@ static void accept_clients(int sockfd, int size)
 			{
 				if (*playercount == MAXPLAYER)
 				{
-					sent = send(client_sock_fd, "NACK\n", 6, 0);
-					if (sent < 0)
-						perror("send");
+					if (sendall(client_sock_fd, "NACK\n", 6) == -1)
+						perror("sendall");
 					close(client_sock_fd);
 					exit(0);
 				}
@@ -261,9 +276,8 @@ static void accept_clients(int sockfd, int size)
 				strcat(size_string, number);
 				strcat(size_string, "\n");
 
-				sent = send(client_sock_fd, size_string, sizeof(size_string), 0);
-				if (sent < 0)
-					perror("send");
+				if (sendall(client_sock_fd, size_string, sizeof(size_string)) == -1)
+					perror("sendall");
 				
 			}
 			else
@@ -278,9 +292,8 @@ static void accept_clients(int sockfd, int size)
 			}
 			usleep(1000);
 
-			sent = send(client_sock_fd, "START\n", 7, 0);
-			if (sent < 0)
-				perror("send");
+			if (sendall(client_sock_fd, "START\n", 7) == -1)
+				perror("sendall");
 
 			while(1)
 			{
@@ -302,9 +315,8 @@ static void accept_clients(int sockfd, int size)
 					{
 						char won[MAXDATA] = "END ";
 						strcat(won, end);
-						sent = send(client_sock_fd, won, sizeof(won), 0);
-						if (sent < 0)
-							perror("send");
+						if (sendall(client_sock_fd, won, sizeof(won)) == -1)
+							perror("sendall");
 						break;
 					}
 
@@ -336,9 +348,8 @@ static void accept_clients(int sockfd, int size)
 								perror("sem_post");
 						}
 
-						sent = send(client_sock_fd, ret, sizeof(ret), 0);
-						if (sent < 0)
-							perror("send");
+						if (sendall(client_sock_fd, ret, sizeof(ret)) == -1)
+							perror("sendall");
 					}
 
 					if (strncmp(buf, "STATUS", 6) == 0)
@@ -349,9 +360,8 @@ static void accept_clients(int sockfd, int size)
 						strcpy(name, playground[x+y*size].name);
 						if (sem_post(playground[x+y*size].lock))
 							perror("sem_post");
-						sent = send(client_sock_fd, name, sizeof(name), 0);
-						if (sent < 0)
-							perror("send");
+						if (sendall(client_sock_fd, name, sizeof(name)) == -1)
+							perror("sendall");
 					}
 				}
 			}
