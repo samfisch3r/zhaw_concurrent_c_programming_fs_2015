@@ -205,7 +205,7 @@ int main(int argc, char const *argv[])
 				{
 					memset(buf, 0, sizeof(buf));
 
-					char take[MAXDATA] = "TAKE ";
+					char take[MAXDATA-1] = "TAKE ";
 					char field[32];
 
 					sprintf(field, "%d", x);
@@ -236,7 +236,6 @@ int main(int argc, char const *argv[])
 					} while(nbytes == 0);
 					buf[nbytes] = '\0';
 					fprintf(stderr, "client: received %s", buf);
-					// usleep(50000);
 				}
 			}
 		}
