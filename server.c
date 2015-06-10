@@ -100,6 +100,7 @@ sock_t bind_socket_to_address(struct addrinfo* servinfo)
 			perror("server: socket");
 			continue;
 		}
+		fcntl(sockfd, F_SETFL, O_NONBLOCK);
 
 		allow_port_reuse(sockfd);
 
@@ -226,7 +227,8 @@ static void accept_clients(int sockfd, int size)
 
 		if (client_sock_fd == -1)
 		{
-			perror("accept");
+			if (strcmp(end, "") != 0)
+				break;
 			continue;
 		}
 
