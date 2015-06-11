@@ -236,12 +236,15 @@ int main(int argc, char const *argv[])
 					} while(nbytes == 0);
 					buf[nbytes] = '\0';
 					fprintf(stderr, "client: received %s", buf);
+					if (strncmp(buf, "END", 3) == 0)
+					{
+						close(sock.fd);
+						exit(0);
+					}
 				}
 			}
 		}
 	}
-
-	close(sock.fd);
 
 	return 0;
 }
